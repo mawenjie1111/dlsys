@@ -30,6 +30,22 @@ def parse_mnist(image_filesname, label_filename):
                 for MNIST will contain the values 0-9.
     """
     ### BEGIN YOUR SOLUTION
+    with gzip.open(image_filesname, 'rb') as f:
+        file_content = f.read()
+        # use big-endian!
+        num = struct.unpack('>I', file_content[4:8])[0]
+        X = np.array(struct.unpack(
+                    'B'*784*num, file_content[16:16+784*num]
+                ), dtype=np.float32)
+        X.resize((num, 784))
+    with gzip.open(label_filename, 'rb') as f:
+        file_content = f.read()
+        num = struct.unpack('>I', file_content[4: 8])[0]
+        y = np.array([struct.unpack('B', file_content[8+i:9+i])[0] for i in range(num)], dtype=np.uint8)
+    
+    # THE MAX VALUE IS 255, NOT 256!
+    X = X / 255.0
+    return X, y
     raise NotImplementedError()
     ### END YOUR SOLUTION
 
@@ -51,6 +67,12 @@ def softmax_loss(Z, y_one_hot):
         Average softmax loss over the sample. (ndl.Tensor[np.float32])
     """
     ### BEGIN YOUR SOLUTION
+    a = ndl.ops.summation(Z * y_one_hot)
+    b = ndl.ops.summation(ndl.ops.log(ndl.ops.summation(ndl.ops.exp(Z), axes=(1, ))))
+    return (b - a) / Z.shape[0]
+    a=ndl.ops.summation(ndl.ops.log(ndl.ops.summation(ndl.ops.exp(Z), axes=(1,))))
+    b=ndl.ops.summation((ndl.ops.multiply(Z,y_one_hot)))
+    return ndl.ops.divide_scalar(a-b,Z.shape[0])
     raise NotImplementedError()
     ### END YOUR SOLUTION
 
@@ -78,8 +100,46 @@ def nn_epoch(X, y, W1, W2, lr = 0.1, batch=100):
             W1: ndl.Tensor[np.float32]
             W2: ndl.Tensor[np.float32]
     """
-
+    # num_classes=X.shape[0]
+    # for i in range(num_classes//batch+1):
+    #     j=min((i+1)*batch, num_classes)
+    #     x_b=X[i*batch:j]
+    #     y_b=y[i*batch:j]
+    #     x_b= ndl.Tensor(x_b,requires_grad=False)
+    #     z_b=ndl.ops.relu(ndl.ops.matmul(x_b, W1))
+    #     z_d=ndl.ops.matmul(z_b, W2)
+    #     I=np.zeros(z_d.shape, dtype=np.float32)
+    #     I[np.arange(z_d.shape[0]), y_b] = 1
+    #     I=ndl.Tensor(I,requires_grad=False)
+    #     loss=softmax_loss(z_d, I)
+    #     loss.backward()
+    #     print("w.type{}".format(W1.grad.dtype))
+    #     W1.data -= lr * ndl.Tensor(W1.grad).numpy().astype(np.float32)
+    #     W2.data -= lr * ndl.Tensor(W2.grad).numpy().astype(np.float32)
+    #     if j>=num_classes:
+    #         break
+    # return W1, W2
     ### BEGIN YOUR SOLUTION
+    for i in range(X.shape[0] // batch + 1):
+        start, end = i * batch, min((i+1)*batch, X.shape[0])
+        m = end - start
+        if m == 0:
+            break
+        Xb, yb = X[start:end], y[start:end]
+        Xb = ndl.Tensor(Xb, requires_grad=False)
+        Z1 = Xb @ W1
+        A1 = ndl.ops.relu(Z1)
+        Z2 = A1 @ W2
+        y_one_hot = np.zeros(Z2.shape, dtype=np.int8)
+        y_one_hot[np.arange(Z2.shape[0]), yb] = 1
+        y_one_hot = ndl.Tensor(y_one_hot, requires_grad=False)
+        loss = softmax_loss(Z2, y_one_hot)     
+        loss.backward()
+        # FIXME: dtype error
+        W1.data = W1.data - lr * ndl.Tensor(W1.grad.numpy().astype(np.float32)) 
+        W2.data = W2.data - lr * ndl.Tensor(W2.grad.numpy().astype(np.float32))
+    
+    return W1, W2
     raise NotImplementedError()
     ### END YOUR SOLUTION
 

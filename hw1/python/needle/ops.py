@@ -266,13 +266,13 @@ def matmul(a, b):
 class Negate(TensorOp):
     def compute(self, a):
         ### BEGIN YOUR SOLUTION
-        return -a
+        return array_api.multiply(a, -1)
         raise NotImplementedError()
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
-        return -out_grad
+        return mul_scalar(out_grad, -1)
         raise NotImplementedError()
         ### END YOUR SOLUTION
 
@@ -284,11 +284,13 @@ def negate(a):
 class Log(TensorOp):
     def compute(self, a):
         ### BEGIN YOUR SOLUTION
+        return array_api.log(a)
         raise NotImplementedError()
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
+        return out_grad / node.inputs[0]
         raise NotImplementedError()
         ### END YOUR SOLUTION
 
@@ -300,11 +302,13 @@ def log(a):
 class Exp(TensorOp):
     def compute(self, a):
         ### BEGIN YOUR SOLUTION
+        return array_api.exp(a)
         raise NotImplementedError()
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
+        return exp(node.inputs[0]) * out_grad
         raise NotImplementedError()
         ### END YOUR SOLUTION
 
@@ -317,11 +321,15 @@ def exp(a):
 class ReLU(TensorOp):
     def compute(self, a):
         ### BEGIN YOUR SOLUTION
+        return array_api.maximum(a, 0)
         raise NotImplementedError()
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
+        a = node.inputs[0].realize_cached_data()
+        mask = Tensor(a > 0)
+        return out_grad * mask
         raise NotImplementedError()
         ### END YOUR SOLUTION
 

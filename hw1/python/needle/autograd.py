@@ -406,7 +406,7 @@ def compute_gradient_of_variables(output_tensor, out_grad):
                     node_to_output_grads_list[k] = []
             node_to_output_grads_list[k].append(grad[i])
     return output_tensor.grad
-
+ 
     ### BEGIN YOUR SOLUTION
     #raise NotImplementedError()
     ### END YOUR SOLUTION
