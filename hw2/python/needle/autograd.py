@@ -367,6 +367,10 @@ class Tensor(Value):
 
     def __pow__(self, other):
         ### BEGIN YOUR SOLUTION
+        if isinstance(other, Tensor):
+            raise NotImplementedError()
+        else:
+            return needle.ops.PowerScalar(other)(self)
         raise NotImplementedError()
         ### END YOUR SOLUTION
 
@@ -471,7 +475,7 @@ def topo_sort_dfs(node, visited, topo_order):
         visited.append(node)
         topo_order.append(node)
    
-    raise NotImplementedError()
+    #raise NotImplementedError()
     ### END YOUR SOLUTION
 
 
