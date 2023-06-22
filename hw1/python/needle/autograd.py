@@ -1,5 +1,6 @@
 """Core data structures."""
-import needle
+import python.needle as needle
+# import needle
 from typing import List, Optional, NamedTuple, Tuple, Union
 from collections import namedtuple
 import numpy
@@ -83,6 +84,7 @@ class Op:
             A list containing partial gradient adjoints to be propagated to
             each of the input node.
         """
+        print("gradient not implemented")
         raise NotImplementedError()
 
     def gradient_as_tuple(self, out_grad: "Value", node: "Value") -> Tuple["Value"]:
@@ -226,6 +228,7 @@ class Tensor(Value):
         requires_grad=True,
         **kwargs
     ):
+        print("ok")
         if isinstance(array, Tensor):
             if device is None:
                 device = array.device
@@ -238,10 +241,11 @@ class Tensor(Value):
                 cached_data = Tensor._array_from_numpy(
                     array.numpy(), device=device, dtype=dtype
                 )
+            
         else:
             device = device if device else cpu()
             cached_data = Tensor._array_from_numpy(array, device=device, dtype=dtype)
-
+            
         self._init(
             None,
             [],
@@ -312,6 +316,7 @@ class Tensor(Value):
     def backward(self, out_grad=None):
         out_grad = out_grad if out_grad else Tensor(numpy.ones(self.shape))
         compute_gradient_of_variables(self, out_grad)
+        print("#################################")
 
     def __repr__(self):
         return "needle.Tensor(" + str(self.realize_cached_data()) + ")"
@@ -323,6 +328,7 @@ class Tensor(Value):
         data = self.realize_cached_data()
         if array_api is numpy:
             return data
+        print("Warning: converting tensor from %s to numpy" % array_api.__name__)
         return data.numpy()
 
     def __add__(self, other):
@@ -425,8 +431,6 @@ def find_topo_sort(node_list: List[Value]) -> List[Value]:
     topo_order=[]
     for i in node_list:
         if i not in viseted:
-            #print("1")
-            #viseted.append(i)
             topo_sort_dfs(i,viseted,topo_order)
     return  topo_order
     raise NotImplementedError()
@@ -438,11 +442,11 @@ def topo_sort_dfs(node, visited, topo_order):
     ### BEGIN YOUR SOLUTION
     if node  in visited:
         return
-    else:
-        for i in node.inputs:
-            topo_sort_dfs(i, visited, topo_order)
-        visited.append(node)
-        topo_order.append(node)
+    
+    for i in node.inputs:
+        topo_sort_dfs(i, visited, topo_order)
+    visited.append(node)
+    topo_order.append(node)
    
     ### END YOUR SOLUTION
 

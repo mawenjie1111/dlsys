@@ -81,6 +81,8 @@ class PowerScalar(TensorOp):
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
+        lhs = node.inputs[0]
+        return (out_grad*self.scalar* lhs**(self.scalar - 1), )
         raise NotImplementedError()
         ### END YOUR SOLUTION
 
