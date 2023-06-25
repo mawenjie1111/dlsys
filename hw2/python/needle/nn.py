@@ -117,6 +117,7 @@ class Flatten(Module):
 class ReLU(Module):
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
+        return ops.relu(x)
         raise NotImplementedError()
         ### END YOUR SOLUTION
 
@@ -128,13 +129,20 @@ class Sequential(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        for module in self.modules:
+            x=module(x)
+        return x
+        #raise NotImplementedError()
         ### END YOUR SOLUTION
 
 
 class SoftmaxLoss(Module):
     def forward(self, logits: Tensor, y: Tensor):
         ### BEGIN YOUR SOLUTION
+        one_hot_y =init.one_hot(logits.shape[1],y)
+        zy=(logits*one_hot_y).sum()
+        b=ops.logsumexp(logits,axes=(1,)).sum()
+        return (b-zy)/logits.shape[0]
         raise NotImplementedError()
         ### END YOUR SOLUTION
 
@@ -162,13 +170,33 @@ class LayerNorm1d(Module):
         super().__init__()
         self.dim = dim
         self.eps = eps
+        self.bias = Parameter(init.zeros(dim, dtype=dtype,requires_grad=True))
+        self.weight = Parameter(init.ones(dim, dtype=dtype,requires_grad=True))  
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
         ### END YOUR SOLUTION
 
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        mean_x=x.sum(axes=(1,)).reshape((x.shape[0],1))/x.shape[1]
+        mean_x=mean_x.broadcast_to(x.shape)
+        print(mean_x.shape)
+        x_hat=(x-mean_x)
+        vars_x=(x_hat**2).sum(axes=(1,)).reshape((x.shape[0],1))/x.shape[1]
+        x_std=((vars_x+self.eps)**0.5).broadcast_to(x.shape)
+        return  self.weight.broadcast_to(x.shape)* (x_hat/x_std)+self.bias.broadcast_to(x.shape)
+        # batch_size = x.shape[0]
+        # feature_size = x.shape[1]
+        # # NOTE need reshape, because (4, ) can brcsto (2, 4) but (4, ) cannot brcsto (4, 2)
+        # mean = x.sum(axes=(1, )).reshape((batch_size, 1)) / feature_size
+        
+        # # NOTE need manual broadcast_to!!!
+        # x_minus_mean = x - mean.broadcast_to(x.shape)
+        # x_std = ((x_minus_mean ** 2).sum(axes=(1, )).reshape((batch_size, 1)) / feature_size + self.eps) ** 0.5
+        # # NOTE need manual broadcast_to!!!
+        # normed = x_minus_mean / x_std.broadcast_to(x.shape)
+        
+        # return self.weight.broadcast_to(x.shape) * normed + self.bias.broadcast_to(x.shape)
+        #raise NotImplementedError()
         ### END YOUR SOLUTION
 
 
