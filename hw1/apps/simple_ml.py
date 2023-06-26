@@ -70,10 +70,6 @@ def softmax_loss(Z, y_one_hot):
     a = ndl.ops.summation(Z * y_one_hot)
     b = ndl.ops.summation(ndl.ops.log(ndl.ops.summation(ndl.ops.exp(Z), axes=(1, ))))
     return (b - a) / Z.shape[0]
-    a=ndl.ops.summation(ndl.ops.log(ndl.ops.summation(ndl.ops.exp(Z), axes=(1,))))
-    b=ndl.ops.summation((ndl.ops.multiply(Z,y_one_hot)))
-    return ndl.ops.divide_scalar(a-b,Z.shape[0])
-    raise NotImplementedError()
     ### END YOUR SOLUTION
 
 
