@@ -27,15 +27,21 @@ class SGD(Optimizer):
         ### BEGIN YOUR SOLUTION
         for i,param in  enumerate(self.params):
             if i not in self.u:
-                self.u[i] = 0
+                self.u[i] = 0.0
             if param.grad is None:
                 continue
-            self.u[i] =ndl.Tensor(self.momentum * self.u[i] \
-                +(1-self.momentum)* param.grad,dtype=np.float32)
-            #print(self.u[param].dtype)
-            param.data =(1-self.weight_decay*self.lr)*param.data-self.u[i]*self.lr
-        #raise NotImplementedError()
-        ### END YOUR SOLUTION
+            grad_data = ndl.Tensor(param.grad+self.weight_decay*param.data, dtype='float32').data
+            self.u[i] =self.momentum * self.u[i] \
+                +(1-self.momentum)*grad_data
+            print(self.u[i].dtype)
+            param.data =param.data - self.lr*self.u[i]
+            ## not understand why can't pass
+            ## code  is equal to below
+            # grad_data = ndl.Tensor(param.grad, dtype='float32').data
+            # self.u[i] =self.momentum * self.u[i] \
+            #     +(1-self.momentum)*grad_data
+            # print(self.u[i].dtype)
+            # param.data =(1-self.weight_decay*self.lr)*param.data - self.lr*self.u[i]
 
 
 class Adam(Optimizer):
