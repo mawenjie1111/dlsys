@@ -66,7 +66,8 @@ def xavier_normal(fan_in, fan_out, gain=1.0, **kwargs):
 def kaiming_uniform(fan_in, fan_out, nonlinearity="relu", **kwargs):
     assert nonlinearity == "relu", "Only relu supported currently"
     ### BEGIN YOUR SOLUTION
-    bound=math.sqrt(6/ fan_in)
+    gain = math.sqrt(2)
+    bound = gain * math.sqrt(3 / fan_in)
     return bound * (2 * rand(fan_in, fan_out, **kwargs) - 1)
     raise NotImplementedError()
     ### END YOUR SOLUTION

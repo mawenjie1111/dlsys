@@ -96,12 +96,11 @@ class Linear(Module):
 
     def forward(self, X: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        x_w=X@self.weight
+        X_mul_weight = X @ self.weight
         if self.bias:
-            self.bias=self.bias.broadcast_to(x_w.shape)
-            return x_w+self.bias
+            return X_mul_weight + self.bias.broadcast_to(X_mul_weight.shape)
         else:
-            return x_w
+            return X_mul_weight
         raise NotImplementedError()
         ### END YOUR SOLUTION
 
@@ -110,7 +109,7 @@ class Linear(Module):
 class Flatten(Module):
     def forward(self, X):
         ### BEGIN YOUR SOLUTION
-        return ops.reshape(X,(X.shape[0],-1))
+        return X.reshape((X.shape[0], -1))
         raise NotImplementedError()
         ### END YOUR SOLUTION
 
@@ -156,10 +155,10 @@ class BatchNorm1d(Module):
         self.eps = eps
         self.momentum = momentum
         ### BEGIN YOUR SOLUTION
-        self.weight= Parameter(init.ones(dim, requires_grad=True))
-        self.bias = Parameter(init.zeros(dim, requires_grad=True))
-        self.running_mean = init.zeros(dim, dtype=dtype)
-        self.running_var = init.ones(dim, dtype=dtype)
+        self.weight = Parameter(init.ones(self.dim, requires_grad=True))
+        self.bias = Parameter(init.zeros(self.dim, requires_grad=True))
+        self.running_mean = init.zeros(self.dim)
+        self.running_var = init.ones(self.dim)
         #raise NotImplementedError()
         ### END YOUR SOLUTION
 
@@ -186,8 +185,9 @@ class LayerNorm1d(Module):
         super().__init__()
         self.dim = dim
         self.eps = eps
-        self.bias = Parameter(init.zeros(dim, dtype=dtype,requires_grad=True))
-        self.weight = Parameter(init.ones(dim, dtype=dtype,requires_grad=True))  
+        self.weight = Parameter(init.ones(self.dim, requires_grad=True))
+        # NOTE bias initialized to 0!!!
+        self.bias = Parameter(init.zeros(self.dim, requires_grad=True))
         ### BEGIN YOUR SOLUTION
         ### END YOUR SOLUTION
 
