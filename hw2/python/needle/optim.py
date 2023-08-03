@@ -35,13 +35,7 @@ class SGD(Optimizer):
                 +(1-self.momentum)*grad_data
             print(self.u[i].dtype)
             param.data =param.data - self.lr*self.u[i]
-            ## not understand why can't pass
-            ## code  is equal to below
-            # grad_data = ndl.Tensor(param.grad, dtype='float32').data
-            # self.u[i] =self.momentum * self.u[i] \
-            #     +(1-self.momentum)*grad_data
-            # print(self.u[i].dtype)
-            # param.data =(1-self.weight_decay*self.lr)*param.data - self.lr*self.u[i]
+        ### END YOUR SOLUTION
 
 
 class Adam(Optimizer):
@@ -67,5 +61,19 @@ class Adam(Optimizer):
 
     def step(self):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        self.t+=1
+        for i,param in  enumerate(self.params):
+            if i not in self.m:
+                self.m[i] = 0.0
+                self.v[i] = 0.0
+            if param.grad is None:
+                continue
+            grad_data = ndl.Tensor(param.grad+self.weight_decay*param.data, dtype='float32').data
+            self.m[i] =self.beta1* self.m[i] +(1-self.beta1)*grad_data
+            self.v[i] =self.beta2* self.v[i] +(1-self.beta2)*grad_data**2
+            u=self.m[i]/(1-self.beta1**(self.t))
+            v=self.v[i]/(1-self.beta2**(self.t))
+       
+            param.data =param.data-self.lr*u/(v**0.5+self.eps)
+            
         ### END YOUR SOLUTION
