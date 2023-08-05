@@ -143,6 +143,7 @@ class SoftmaxLoss(Module):
         zy=(logits*one_hot_y).sum()
         b=ops.logsumexp(logits,axes=(1,)).sum()
         return (b-zy)/logits.shape[0]
+
         raise NotImplementedError()
         ### END YOUR SOLUTION
 
@@ -195,7 +196,7 @@ class LayerNorm1d(Module):
         ### BEGIN YOUR SOLUTION
         mean_x=x.sum(axes=(1,)).reshape((x.shape[0],1))/x.shape[1]
         mean_x=mean_x.broadcast_to(x.shape)
-        print(mean_x.shape)
+
         x_hat=(x-mean_x)
         vars_x=(x_hat**2).sum(axes=(1,)).reshape((x.shape[0],1))/x.shape[1]
         x_std=((vars_x+self.eps)**0.5).broadcast_to(x.shape)
@@ -210,8 +211,8 @@ class Dropout(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
+        drop=init.randb(*x.shape, p=1-self.p)
         if self.training:
-            drop=init.randb(*x.shape, p=1-self.p)
             return (x*drop)/(1-self.p)
         else:
             return x

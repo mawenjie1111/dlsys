@@ -44,7 +44,7 @@ class TupleGetItem(TensorOp):
         in_grad = []
         for i, value in enumerate(node.inputs[0]):
             if i != index:
-                in_grad.append(zeros_like(value))
+                in_grad.append(array_api.zeros_like(value))
             else:
                 in_grad.append(out_grad)
         return MakeTensorTuple()(*in_grad)
@@ -305,16 +305,13 @@ class MatMul(TensorOp):
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
-        lhs,rhs=node.inputs
-        grad_a = matmul(out_grad, transpose(rhs))
-        grad_b = matmul(transpose(lhs), out_grad)
-        if grad_a.shape != lhs.shape: 
-            length = len(grad_a.shape) - len(lhs.shape)
-            grad_a = summation(grad_a, axes=tuple(range(length)))
-        if grad_b.shape != rhs.shape:
-            length = len(grad_b.shape) - len(rhs.shape)
-            grad_b = summation(grad_b, axes=tuple(range(length)))
-        return grad_a, grad_b 
+        lhs, rhs = node.inputs
+        lgrad, rgrad = matmul(out_grad, rhs.transpose()), matmul(lhs.transpose(), out_grad)
+        if len(lhs.shape) < len(lgrad.shape):
+            lgrad = lgrad.sum(tuple([i for i in range(len(lgrad.shape) - len(lhs.shape))]))
+        if len(rhs.shape) < len(rgrad.shape):
+            rgrad = rgrad.sum(tuple([i for i in range(len(rgrad.shape) - len(rhs.shape))]))
+        return lgrad, rgrad
         raise NotImplementedError()
         ### END YOUR SOLUTION
 
@@ -404,9 +401,16 @@ class LogSumExp(TensorOp):
 
     def compute(self, Z):
         ### BEGIN YOUR SOLUTION
-        max_z=array_api.max(Z,axis=self.axes,keepdims=True)
-        z=array_api.sum(array_api.exp(Z-max_z),axis=self.axes)
-        return array_api.log(z)+array_api.max(Z,axis=self.axes)
+        maxz = array_api.max(Z, axis=self.axes, keepdims=1)
+        ret = array_api.log(
+            array_api.exp(Z - maxz).sum(axis=self.axes, keepdims=1)) + maxz
+        # NOTE do not use squeeze, because it may remove the 1-size dimension in Z.shape
+        if self.axes:   
+            out_shape = [size for i, size in enumerate(Z.shape) if i not in self.axes]
+        else:
+            out_shape = ()
+        ret.resize(tuple(out_shape))
+        return ret
         raise NotImplementedError()
         ### END YOUR SOLUTION
 

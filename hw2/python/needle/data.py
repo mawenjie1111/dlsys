@@ -2,9 +2,10 @@ import numpy as np
 from .autograd import Tensor
 
 from typing import Iterator, Optional, List, Sized, Union, Iterable, Any
-import struct
 
 import gzip
+import struct
+
 class Transform:
     def __call__(self, x):
         raise NotImplementedError
@@ -26,9 +27,8 @@ class RandomFlipHorizontal(Transform):
         flip_img = np.random.rand() < self.p
         ### BEGIN YOUR SOLUTION
         if flip_img:
-            img = img[:, ::-1, :]
+            return np.flip(img, axis=1)
         return img
-        raise NotImplementedError()
         ### END YOUR SOLUTION
 
 
@@ -46,17 +46,9 @@ class RandomCrop(Transform):
         """
         shift_x, shift_y = np.random.randint(low=-self.padding, high=self.padding+1, size=2)
         ### BEGIN YOUR SOLUTION
-        new_img = np.zeros_like(img)
-        H,W=img.shape[0], img.shape[1]
-        if abs(shift_x) >= H or abs(shift_y) >= W:
-            return new_img
-        left,right=max(0,-shift_x),min(H, H-shift_x)
-        up,down=max(0,-shift_y),min(W, W-shift_y)
-        img_left,img_right=max(0,shift_x),min(H, H+shift_x)
-        img_up,img_down=max(0,shift_y),min(W, W+shift_y)
-        new_img[left:right, up:down, :] = img[img_left:img_right, img_up:img_down, :]   
-        return new_img
-        #raise NotImplementedError()
+        img_pad = np.pad(img, [(self.padding, self.padding), (self.padding, self.padding), (0, 0)], 'constant')
+        H, W, _ = img_pad.shape
+        return img_pad[self.padding + shift_x: H - self.padding + shift_x, self.padding + shift_y: W - self.padding + shift_y, :]
         ### END YOUR SOLUTION
 
 
@@ -111,28 +103,30 @@ class DataLoader:
         self.batch_size = batch_size
         indices = np.arange(len(dataset))
         if not self.shuffle:
-            self.ordering = np.array_split(np.arange(len(dataset)), 
-                                           range(batch_size, len(dataset), batch_size))
-        else:
-            np.random.shuffle(indices)
             self.ordering = np.array_split(indices, 
                                            range(batch_size, len(dataset), batch_size))
-
+        # else:
+        #     np.random.shuffle(indices)
+        #     self.ordering = np.array_split(indices, 
+        #                                    range(batch_size, len(dataset), batch_size))
     def __iter__(self):
         ### BEGIN YOUR SOLUTION
-        self.index=0
-        #raise NotImplementedError()
+        self.start = 0
+        if self.shuffle:
+            self.ordering = np.array_split(np.random.permutation(len(self.dataset)), 
+                                           range(self.batch_size, len(self.dataset), self.batch_size))
+        self.idx = -1
         ### END YOUR SOLUTION
         return self
 
     def __next__(self):
         ### BEGIN YOUR SOLUTION
-        if self.index==len(self.ordering):
+
+        self.idx += 1
+        if self.idx >= len(self.ordering):
             raise StopIteration
-        data= [Tensor(x) for x in self.dataset[self.ordering[self.index]]]
-        self.index+=1
-        return tuple(data)
-        raise NotImplementedError()
+        samples = [self.dataset[i] for i in self.ordering[self.idx]]
+        return [Tensor(np.stack([samples[i][j] for i in range(len(samples))])) for j in range(len(samples[0]))]
         ### END YOUR SOLUTION
 
 
@@ -145,27 +139,29 @@ class MNISTDataset(Dataset):
     ):
         ### BEGIN YOUR SOLUTION
         super().__init__(transforms)
-        self.image,self.label=parse_mnist(image_filename,label_filename)
-        #raise NotImplementedError()
-        ### END YOUR SOLUTION
+        self.images, self.labels = parse_mnist(
+            image_filename=image_filename,
+            label_filename=label_filename
+        )
+      
 
     def __getitem__(self, index) -> object:
         ### BEGIN YOUR SOLUTION
-        X,y=self.image[index],self.label[index]
-        if self.transforms is not None:
+        X, y = self.images[index], self.labels[index]
+        # NOTE: `self.transforms` need input shape like this.
+        if self.transforms:
             X_in = X.reshape((28, 28, -1))
             X_out = self.apply_transforms(X_in)
-            X = X_out.reshape(-1, 28 * 28)
-            return X, y
+            X_ret = X_out.reshape(-1, 28 * 28)
+            print(X_ret.shape)
+            return X_ret, y
         else:
             return X, y
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+     
 
     def __len__(self) -> int:
         ### BEGIN YOUR SOLUTION
-        return len(self.image)
-        raise NotImplementedError()
+        return self.labels.shape[0]
         ### END YOUR SOLUTION
 
 class NDArrayDataset(Dataset):
@@ -177,7 +173,6 @@ class NDArrayDataset(Dataset):
 
     def __getitem__(self, i) -> object:
         return tuple([a[i] for a in self.arrays])
-
 
 def parse_mnist(image_filename, label_filename):
     """ Read an images and labels file in MNIST format.  See this page:
@@ -219,5 +214,4 @@ def parse_mnist(image_filename, label_filename):
     # THE MAX VALUE IS 255, NOT 256!
     X = X / 255.0
     return X, y
-    pass
     ### END YOUR CODE

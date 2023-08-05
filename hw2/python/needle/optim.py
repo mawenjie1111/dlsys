@@ -33,7 +33,6 @@ class SGD(Optimizer):
             grad_data = ndl.Tensor(param.grad+self.weight_decay*param.data, dtype='float32').data
             self.u[i] =self.momentum * self.u[i] \
                 +(1-self.momentum)*grad_data
-            print(self.u[i].dtype)
             param.data =param.data - self.lr*self.u[i]
         ### END YOUR SOLUTION
 
